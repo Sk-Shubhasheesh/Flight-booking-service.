@@ -1,19 +1,27 @@
 const axios = require('axios');
-
+const { StatusCodes} = require('http-status-codes')
 const { BookingRepository } = require('../repositories');
 const { ServerConfig } = require('../config')
 const db = require('../models');
+const AppError = require('../utils/errors/app-error');
 
 async function createBooking(data) {
-    try {
-       const result = db.sequelize.transaction(async function bookingImp(t){
-           const flight = await axios.get(`${ServerConfig.FLIGHT_SERVICE}/api/v1/flights/${data.flightId}`);
-           console.log(flight.data);
-           return true;
-       }); 
-    } catch (error) {
-        throw error;
-    }
+    return new Promise((resolve, reject) => {
+       
+            const result = db.sequelize.transaction(async function bookingImp(t){
+             //console.log("inside booking service");
+             // console.log(`${ServerConfig.FLIGHT_SERVICE}/api/v1/flights/${data.flightId}`);
+                const flight = await axios.get(`${ServerConfig.FLIGHT_SERVICE}/api/v1/flights/${data.flightId}`);
+                //console.log(flight.data);
+                const flightData = flight.data.data;
+                if(data.noOfSeats > flightData.totalSeats){
+                 reject(new AppError('Not enough seats available', StatusCodes.BAD_REQUEST));
+                }
+                 resolve(true);
+            }); 
+          
+        });
+   
 }
 
 

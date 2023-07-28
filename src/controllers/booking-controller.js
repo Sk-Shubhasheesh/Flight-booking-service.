@@ -6,8 +6,11 @@ const{SuccessResponce, ErrorResponce} = require('../utils/common');
 
 async function createBooking(req, res){
     try {
+        // console.log("body", req.body);
         const response = await BookingService.createBooking({
-            fightId: req.body.fightId,
+            flightId: req.body.flightId,
+            userId: req.body.userId,
+            noOfSeats:req.body.noOfSeats
 
         });
         SuccessResponce.data = response;
