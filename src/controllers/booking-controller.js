@@ -4,6 +4,8 @@ const { BookingService } = require('../services');
 const{SuccessResponce, ErrorResponce} = require('../utils/common');
 // const { data } = require('../utils/common/error-response');
 
+const inMemoryDb = {};
+
 async function createBooking(req, res){
     try {
         // console.log("body", req.body);
@@ -29,6 +31,18 @@ async function createBooking(req, res){
 
 async function makePayment(req, res){
     try {
+        const idempotencykey = req.headers['x-idempotency-key'];
+        if(!idempotencykey){
+            return res
+            .status(StatusCodes.BAD_REQUEST)
+            .json({message: 'idempotency key is missing'});
+
+        }
+        if(inMemoryDb[idempotencykey]){
+            return res
+                .status(StatusCodes.BAD_REQUEST)
+                .json({message: 'Cannot retry on a successful payment'});
+        }
         // console.log("body", req.body);
         const response = await BookingService.makePayment({
             userId: req.body.userId,
@@ -36,6 +50,7 @@ async function makePayment(req, res){
             totalCost: req.body.totalCost,
 
         });
+        inMemoryDb[idempotencykey] = idempotencykey;
         SuccessResponce.data = response;
         return res
                 .status(StatusCodes.OK)
